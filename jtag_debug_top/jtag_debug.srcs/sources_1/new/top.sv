@@ -143,10 +143,13 @@ module top (
   dmi_error_e error_d, error_q;
   dtmcs_t dtmcs_d, dtmcs_q;
 
-
   // 
   always_comb begin
-    dtmcs_d = dtmcs_q;
+    //dtmcs_d = dtmcs_q;
+    if (DT_SEL && (DT_CAPTURE || DT_SHIFT)) begin
+      DT_DCK = ~DT_DCK;
+    end
+
     if (DT_CAPTURE) begin
       if (DT_SEL) begin
         dtmcs_d = '{
@@ -164,7 +167,9 @@ module top (
     end
 
     if (DT_SHIFT) begin
-      if (DT_SEL) dtmcs_d = {DT_TDI, 31'(dtmcs_q >> 1)};
+      if (DT_SEL) begin
+        dtmcs_d <= {DT_TDI, 31'(dtmcs_q >> 1)};
+      end
     end
   end
 

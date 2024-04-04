@@ -25,6 +25,24 @@ package debug_pkg;
     logic [3:0] version;  // lsb
   } dmstatus_t;
 
+  // 3.14.2. Debug Module Control (dmcontrol, at 0x10)
+  typedef struct packed {
+    logic haltreq;  // msb
+    logic resumereq;
+    logic hartreset;
+    logic ackhavereset;
+    logic ackunavail;
+    logic hasel;
+    logic [25:16] hartsello;
+    logic [15:6] hartselhi;
+    logic setkeepalive;
+    logic clrkeepalive;
+    logic setresethaltreq;
+    logic clrresethaltreq;
+    logic ndmreset;
+    logic dmactive;  // lsb
+  } dmcontrol_t;
+
   // 6.1.4. DTM Control and Status (dtmcs, at 0x10)
   typedef struct packed {
     logic [31:21] zero;  // msb
@@ -35,8 +53,24 @@ package debug_pkg;
     logic [14:12] idle;
     logic [11:10] dmistat;
     logic [9:4] abits;
-    logic [3:0] version;  // slb
+    logic [3:0] version;  // lsb
   } dtmcs_t;
+
+  // A.3. Debug Module Interface Signals
+  typedef struct packed {
+    logic        REQ_VALID;    // msb     // Valid request pending
+    logic [5:0]  REQ_ADDRESS;  // Requested address in DMI
+    logic [31:0] REQ_DATA;     // Requested data at DMI address
+    logic [1:0]  REQ_OP;       // Same as dmi_error_e
+    logic        RSP_READY;    // lsb     // Able to process a respond
+  } dtm_interface_signals;
+
+  typedef struct packed {
+    logic        REQ_READY;  // msb       // Able to process a request
+    logic        RSP_VALID;  // Valid respond pending
+    logic [31:0] RSP_DATA;   // Response data
+    logic [1:0]  RSP_OP;     // lsb       // Same as dmi_error_e
+  } dm_interface_signals;
 
   typedef enum logic [1:0] {
     DMINoError = 2'h0,
