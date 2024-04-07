@@ -73,6 +73,13 @@ package debug_pkg;
   } dm_interface_signals;
 
   typedef enum logic [1:0] {
+    DMINop = 'b00,
+    DMIRead = 'b01,
+    DMIWrite = 'b10,
+    DMIReserved = 'b11
+  } dmi_op;
+
+  typedef enum logic [1:0] {
     DMINoError = 2'h0,
     DMIReservedError = 2'h1,
     DMIOPFailed = 2'h2,
