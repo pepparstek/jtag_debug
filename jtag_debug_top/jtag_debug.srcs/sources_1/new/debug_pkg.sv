@@ -46,7 +46,7 @@ package debug_pkg;
   // 6.1.4. DTM Control and Status (dtmcs, at 0x10)
   typedef struct packed {
     logic [31:21] zero;  // msb
-    logic errinfo;
+    logic [20:18] errinfo;
     logic dtmhardreset;
     logic dmireset;
     logic zero_;
@@ -63,21 +63,21 @@ package debug_pkg;
     logic [31:0] REQ_DATA;     // Requested data at DMI address
     logic [1:0]  REQ_OP;       // Same as dmi_error_e
     logic        RSP_READY;    // lsb     // Able to process a respond
-  } dtm_interface_signals;
+  } dtm_interface_signals_t;
 
   typedef struct packed {
     logic        REQ_READY;  // msb       // Able to process a request
     logic        RSP_VALID;  // Valid respond pending
     logic [31:0] RSP_DATA;   // Response data
     logic [1:0]  RSP_OP;     // lsb       // Same as dmi_error_e
-  } dm_interface_signals;
+  } dm_interface_signals_t;
 
   typedef enum logic [1:0] {
     DMINop = 'b00,
     DMIRead = 'b01,
     DMIWrite = 'b10,
     DMIReserved = 'b11
-  } dmi_op;
+  } dmi_op_e;
 
   typedef enum logic [1:0] {
     DMINoError = 2'h0,
@@ -86,4 +86,15 @@ package debug_pkg;
     DMIBusy = 2'h3
   } dmi_error_e;
 
+
+  // 6.1.4. DTM Control and Status (dtmcs, at 0x10)
+  // dtmcs errinfo
+
+  typedef enum logic [2:0] {
+    DTMNoImpl = 3'h0,
+    DMIErr    = 3'h1,
+    CommErr   = 3'h2,
+    DeviceErr = 3'h3,
+    Unknown   = 3'h4
+  } dtmcs_errinfo_e;
 endpackage
