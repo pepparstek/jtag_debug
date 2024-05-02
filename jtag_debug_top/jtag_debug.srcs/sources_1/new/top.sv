@@ -120,38 +120,6 @@ module top (
 
 
 
-  // ################ DTMCS Specifics ################
-
-  // Initializing DTMCS structs
-  dtmcs_t dtmcs;
-  dtmcs_errinfo_e dtmcs_errinfo;
-
-  assign DTMCS_TDO   = dtmcs_data[0];
-  assign dtmcs_clear = dtmcs.dtmhardreset;
-
-  // DEBUG SIGNALS
-  (* KEEP = "TRUE" *) logic [31:21] dtmcs_zero;
-  (* KEEP = "TRUE" *) logic [20:18] dtmcs_zero;
-  (* KEEP = "TRUE" *) logic dtmcs_errorinfo;
-  (* KEEP = "TRUE" *) logic dtmcs_dtmhardreset;
-  (* KEEP = "TRUE" *) logic dtmcs_dmireset;
-  (* KEEP = "TRUE" *) logic dtmcs_zero_;
-  (* KEEP = "TRUE" *) logic [14:12] dtmcs_idle;
-  (* KEEP = "TRUE" *) logic [11:10] dtmcs_dmistat;
-  (* KEEP = "TRUE" *) logic [9:4] dtmcs_abits;
-  (* KEEP = "TRUE" *) logic [3:0] dtmcs_version;
-  assign dtmcs_zero         = dtmcs.zero;
-  assign dtmcs_errorinfo    = dtmcs.errinfo;
-  assign dtmcs_dtmhardreset = dtmcs.dtmhardreset;
-  assign dtmcs_dmireset     = dtmcs.dmireset;
-  assign dtmcs_zero_        = dtmcs.zero_;
-  assign dtmcs_idle         = dtmcs.idle;
-  assign dtmcs_dmistat      = dtmcs.dmistat;
-  assign dtmcs_abits        = dtmcs.abits;
-  assign dtmcs_version      = dtmcs.version;
-
-
-
 
 
   // ################ DMI Specifics ################
@@ -221,38 +189,6 @@ module top (
 
 
 
-  // Setting up scanchain for DTMCS
-  (* KEEP = "TRUE" *)logic DTMCS_CAPTURE;
-  (* KEEP = "TRUE" *)logic DTMCS_DRCK;
-  (* KEEP = "TRUE" *)logic DTMCS_RESET;
-  (* KEEP = "TRUE" *)logic DTMCS_RUNTEST;
-  (* KEEP = "TRUE" *)logic DTMCS_SEL;
-  (* KEEP = "TRUE" *)logic DTMCS_SHIFT;
-  (* KEEP = "TRUE" *)logic DTMCS_TCK;
-  (* KEEP = "TRUE" *)logic DTMCS_TDI;
-  (* KEEP = "TRUE" *)logic DTMCS_TMS;
-  (* KEEP = "TRUE" *)logic DTMCS_UPDATE;
-  (* KEEP = "TRUE" *)logic DTMCS_TDO;
-
-  BSCANE2 #(
-      .JTAG_CHAIN(3)  // Value for USER command. USER3 0x22   
-  ) bse2_dtmcs_inst (
-      // Outputs
-      .CAPTURE(DTMCS_CAPTURE),  // 1-bit output: CAPTURE output from TAP controller.
-      .DRCK(DTMCS_DRCK),         // 1-bit output: Gated TCK output. When SEL is asserted, DRCK toggles when CAPTURE or
-      // SHIFT are asserted.
-      .RESET(DTMCS_RESET),  // 1-bit output: Reset output for TAP controller.
-      .RUNTEST(DTMCS_RUNTEST),   // 1-bit output: Output asserted when TAP controller is in Run Test/Idle state.
-      .SEL(DTMCS_SEL),  // 1-bit output: USER instruction active output.
-      .SHIFT(DTMCS_SHIFT),  // 1-bit output: SHIFT output from TAP controller.
-      .TCK(DTMCS_TCK),  // 1-bit output: Test Clock output. Fabric connection to TAP Clock pin.
-      .TDI(DTMCS_TDI),  // 1-bit output: Test Data Input (TDI) output from TAP controller.
-      .TMS(DTMCS_TMS),  // 1-bit output: Test Mode Select output. Fabric connection to TAP.
-      .UPDATE(DTMCS_UPDATE),  // 1-bit output: UPDATE output from TAP controller
-
-      // Inputs
-      .TDO(DTMCS_TDO)  // 1-bit input: Test Data Output (TDO) input for USER function.
-  );
 
 
 
@@ -326,18 +262,6 @@ module top (
 
 
   initial begin
-    dtmcs = '{
-        zero         : '0,
-        errinfo      : 3'h0,  // 0: means not implemented. Reset value is 4. See debug spec
-        dtmhardreset : 1'b0,
-        dmireset     : 1'b0,
-        zero_        : '0,
-        idle         : 3'h1,  // 1: Enter Run-Test/Idle and leave it immediately
-        dmistat      : 2'h0,  // 0: No error, 2: Op failed, 3: DMI busy
-        abits        : DM_REGISTER_SIZE,  // The size of address in dmi
-        version      : 4'd1  // Version described in spec version 0.13 (and later?)
-    };
-    dtmcs_data[DTMCS_DATAWIDTH-1:0] <= dtmcs;
     dmi_data[DMI_DATAWIDTH-1:0] <= '0;
     dmi_interface_signals.DTM_RSP_READY = 1;  // Ready for reponse as default.
     dmi_interface_signals.DM_REQ_READY = 1;  // Ready for request as default.
@@ -478,45 +402,6 @@ module top (
   end
 
 
-
-
-
-
-
-  // ########################### DTMCS ###########################
-  // DTMCS OVERVIEW EXPLANATION:
-  // DTMCS tells the Debugger about the state of transactions. It is
-  // mostly a read register. However, you are able to write to two bits
-  // dmireset and dtmhardreset. Dtmhardreset has not been implemented.
-  // Dmireset resets the dmi_data channel as it should not kill any 
-  // outstanding DMI transactions.
-
-
-
-  always @(posedge DTMCS_TCK) begin
-    if (DTMCS_UPDATE && DTMCS_SEL) begin
-      // dtmcs.errinfo <= 0;
-      // NOTE: dtmhardreset might not have to be used. This is
-      // used when it expects a DMI transaction to never complete.
-      // dtmcs.dtmhardreset <= dtmcs_data[17];
-      // TODO: dmireset resets errinfo if implemented.
-      dtmcs.dmireset = dtmcs_data[16];
-      // TODO: idle should increase if DMIBusy problems occur.
-      // dtmcs.idle <= dtmcs_data[14:12];
-      dtmcs.dmistat  = dmi_resp.op;
-      dtmcs_data <= dtmcs;
-    end
-
-    if (DTMCS_CAPTURE && DTMCS_SEL) begin
-      dtmcs_data <= dtmcs;
-    end
-
-    // Shifts in the instruction recieved
-    if (DTMCS_SHIFT && DTMCS_SEL) begin
-      dtmcs_data <= {DTMCS_TDI, dtmcs_data[DTMCS_DATAWIDTH-1:1]};
-    end
-
-  end
 
 
 
