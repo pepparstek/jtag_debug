@@ -1,6 +1,111 @@
 package debug_pkg;
-  // 3.14.1. Debug Module Status (dmstatus, at 0x11)
 
+  // Implementation built using 
+  //
+  // The RISC-V Deubg Specification
+  // Tim Newsome, Paul Donahue (Ventana Micro Systems)
+  // Version 1.0.0-rc2, Revised 2024-01-25: Frozen
+
+
+  // ########################################################
+  // #               Debug Transport Module                 #
+  // ########################################################
+
+  // 6.1.4. DTM Control and Status (dtmcs, at 0x10)
+  // Struct representing the DTM
+  typedef struct packed {
+    logic [31:21] zero;  // msb
+    logic [20:18] errinfo;  // 
+    logic dtmhardreset;
+    logic dmireset;
+    logic zero_;
+    logic [14:12] idle;
+    logic [11:10] dmistat;
+    logic [9:4] abits;
+    logic [3:0] version;  // lsb
+  } dtmcs_t;
+
+  // 6.1.4. DTM Control and Status (dtmcs, at 0x10)
+  // DTMCS ERRINFO
+  typedef enum logic [2:0] {
+    DTMNoImpl = 3'h0,
+    DMIErr    = 3'h1,   // Error between DTM and DMI
+    CommErr   = 3'h2,   // Error between DMI and DMI subordinate
+    DeviceErr = 3'h3,   // DMI subordinate reported an error
+    Unknown   = 3'h4    // Reset value. No error to report
+  } dtmcs_errinfo_e;
+
+
+
+
+
+
+
+
+
+
+
+  // ########################################################
+  // #                Debug Module Interface                #
+  // ########################################################
+
+  // 6.1.5. Debug Module Interface Access (dmi, at 0x11)
+  // Struct representing DMI data package.
+  typedef struct packed {
+    logic [39:34] address;  // msb // Address to access
+    logic [33:2]  data;     // Data to read/write
+    logic [1:0]   op;       // lsb // Operation to perform. See dmi_op_e
+  } dmi_t;
+
+  // 6.1.5. Debug Module Interface Access (dmi, at 0x11)
+  // Operations by the DMI
+  typedef enum logic [1:0] {
+    DMINop = 'h0,
+    DMIRead = 'h1,
+    DMIWrite = 'h2,
+    DMIReserved = 'h3
+  } dmi_op_e;
+
+  // 6.1.5. Debug Module Interface Access (dmi, at 0x11)
+  // When debugger reads op field
+  typedef enum logic [1:0] {
+    DMINoError = 2'h0,
+    DMIReservedError = 2'h1,
+    DMIOpFailed = 2'h2,
+    DMIBusy = 2'h3
+  } dmi_error_e;
+
+  // A.3. Debug Module Interface Signals
+  typedef struct {
+    logic DTM_RSP_READY;  // DTM: Able to process a response
+    logic DTM_REQ_VALID;  // DTM: Valid request pending
+    logic DM_REQ_READY;   // DM: Able to process a request
+    logic DM_RSP_VALID;   // DM: Valid respond pending
+  } dmi_interface_signals_t;
+
+  typedef enum logic [2:0] {
+    Idle = 2'h0,
+    Read = 2'h1,
+    Write = 2'h2,
+    WaitResponse = 2'h3
+  } dmi_state_e;
+
+
+
+
+
+
+
+
+
+
+  // ########################################################
+  // #                      Debug Module                    #
+  // ########################################################
+
+  // 3.14.1. Debug Module Status (dmstatus, at 0x11)
+  // Status of the overall Debug Module and about the
+  // currently selected harts
   typedef struct packed {
     logic [31:25] zero;  // msb
     logic ndmresetpending;
@@ -26,6 +131,7 @@ package debug_pkg;
   } dmstatus_t;
 
   // 3.14.2. Debug Module Control (dmcontrol, at 0x10)
+  // Controls the currently selected currently selected harts.
   typedef struct packed {
     logic haltreq;  // msb
     logic resumereq;
@@ -42,59 +148,12 @@ package debug_pkg;
     logic ndmreset;
     logic dmactive;  // lsb
   } dmcontrol_t;
-
-  // 6.1.4. DTM Control and Status (dtmcs, at 0x10)
-  typedef struct packed {
-    logic [31:21] zero;  // msb
-    logic [20:18] errinfo;
-    logic dtmhardreset;
-    logic dmireset;
-    logic zero_;
-    logic [14:12] idle;
-    logic [11:10] dmistat;
-    logic [9:4] abits;
-    logic [3:0] version;  // lsb
-  } dtmcs_t;
-
-  // A.3. Debug Module Interface Signals
-  typedef struct packed {
-    logic        REQ_VALID;    // msb     // Valid request pending
-    logic [5:0]  REQ_ADDRESS;  // Requested address in DMI
-    logic [31:0] REQ_DATA;     // Requested data at DMI address
-    logic [1:0]  REQ_OP;       // Same as dmi_error_e
-    logic        RSP_READY;    // lsb     // Able to process a respond
-  } dtm_interface_signals_t;
-
-  typedef struct packed {
-    logic        REQ_READY;  // msb       // Able to process a request
-    logic        RSP_VALID;  // Valid respond pending
-    logic [31:0] RSP_DATA;   // Response data
-    logic [1:0]  RSP_OP;     // lsb       // Same as dmi_error_e
-  } dm_interface_signals_t;
-
-  typedef enum logic [1:0] {
-    DMINop = 'b00,
-    DMIRead = 'b01,
-    DMIWrite = 'b10,
-    DMIReserved = 'b11
-  } dmi_op_e;
-
-  typedef enum logic [1:0] {
-    DMINoError = 2'h0,
-    DMIReservedError = 2'h1,
-    DMIOPFailed = 2'h2,
-    DMIBusy = 2'h3
-  } dmi_error_e;
+    
+  // 3.14. Debug Module Registers
+  typedef struct {
+    dmcontrol_t dmcontrol;
+    dmstatus_t  dmstatus;
+  } dm_t;
 
 
-  // 6.1.4. DTM Control and Status (dtmcs, at 0x10)
-  // dtmcs errinfo
-
-  typedef enum logic [2:0] {
-    DTMNoImpl = 3'h0,
-    DMIErr    = 3'h1,
-    CommErr   = 3'h2,
-    DeviceErr = 3'h3,
-    Unknown   = 3'h4
-  } dtmcs_errinfo_e;
 endpackage

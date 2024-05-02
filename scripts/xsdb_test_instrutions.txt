@@ -1,0 +1,51 @@
+########## SETUP ##########
+
+# Notice the path layer difference between Windows(\) and Linux(/)
+# XSCT use Linux(/) form
+xsdb$ source /home/ante/git/jtag_debug/scripts/jtag_reorder.tcl
+xsdb% connect
+xsdb% jtag targets
+  1  Digilent Arty 210319755023A
+     2  xc7a35t (idcode 0362d093 irlen 6 fpga)
+        3  bscan-switch (idcode 04900101 irlen 1 fpga)
+           4  unknown (idcode 04900220 irlen 1 fpga)
+xsdb% jtag targets 2
+xsdb% set jseq [jtag sequence]
+
+SEND DATA OVER JTAG
+# Select JTAG Register USER4 [2]
+xsdb% $jseq irshift -state IDLE -hex 6 23
+xsdb% $jseq drshift -state IDLE -hex 40 [jtag_reorder 07FFFFFFFE]
+xsdb% $jseq run
+xsdb% $jseq clear
+
+
+READ DATA OVER JTAG
+# Select JTAG Register USER4 [2]
+xsdb% $jseq irshift -state IDLE -hex 6 23
+xsdb% $jseq drshift -state IDLE -tdi 0 -capture 40
+xsdb% set result [jtag_reorder [$jseq run]]
+12345678
+xsdb% $jseq clear
+xsdb% puts $result
+12345678
+
+
+##############################
+
+40 bits:
+Address 1, 0xFFFFFFFF, Write: 07FFFFFFFE 
+Address 1, 0xFFFFFFFF, Read: 07FFFFFFFD
+
+Address 2, 0xFFFFFFFF, Write: 0BFFFFFFFE
+Address 2, 0xFFFFFFFF, Read: 0BFFFFFFFD
+
+32 bits:
+dmireset with dtmcs: 00010000
+00101051
+
+Testing dtmcs on 0x22, you need to set XSDB_USER_BSCAN to 1 from 1,3 BEFORE programming
+the device, i.e. after using Auto Connect.
+You find this property at PROGRAM AND DEBUG -> xc7a35t_0 under localhost 
+-> Hardware Device Properties -> Properties tab down bottom. 
+The 1,3 hijacks USER3s scan chain. 
