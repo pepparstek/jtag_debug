@@ -305,7 +305,6 @@ module top (
     //    end
 
     if (dmi_clear) begin
-      dtmcs.errinfo = 3'h0;  // 0: means unimplemented. 4: reset value if implemented.
       error_in = DMINoError;
     end
 
