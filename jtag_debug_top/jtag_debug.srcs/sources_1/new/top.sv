@@ -96,7 +96,8 @@ module top (
 
   (* KEEP = "TRUE" *) reg [DTMCS_DATAWIDTH-1:0] dtmcs_data;
   (* KEEP = "TRUE" *) reg [DMI_DATAWIDTH-1:0] dmi_data;
-  (* KEEP = "TRUE" *) reg [31:0] dm_register[DM_REGISTER_SIZE - 1];
+  (* KEEP = "TRUE" *) reg [31:0] dm_register[100000];  // DM_REGISTER_SIZE - 1
+  //(* KEEP = "TRUE" *) logic [5:0][31:0] dm_register;  // DM_REGISTER_SIZE - 1
   // dm_register won't show up in netlist for debugging unless assigned as below??
   (* KEEP = "TRUE" *) logic [31:0] dm_reg0;
   (* KEEP = "TRUE" *) logic [31:0] dm_reg1;
@@ -105,12 +106,12 @@ module top (
   (* KEEP = "TRUE" *) logic [31:0] dm_reg4;
   (* KEEP = "TRUE" *) logic [31:0] dm_reg5;
 
-  (* KEEP = "TRUE" *)assign dm_reg0 = dm_register[0];
-  (* KEEP = "TRUE" *)assign dm_reg1 = dm_register[1];
-  (* KEEP = "TRUE" *)assign dm_reg2 = dm_register[2];
-  (* KEEP = "TRUE" *)assign dm_reg3 = dm_register[3];
-  (* KEEP = "TRUE" *)assign dm_reg4 = dm_register[4];
-  (* KEEP = "TRUE" *)assign dm_reg5 = dm_register[5];
+  // (* KEEP = "TRUE" *)assign dm_reg0 = dm_register[0];
+  // (* KEEP = "TRUE" *)assign dm_reg1 = dm_register[1];
+  // (* KEEP = "TRUE" *)assign dm_reg2 = dm_register[2];
+  // (* KEEP = "TRUE" *)assign dm_reg3 = dm_register[3];
+  // (* KEEP = "TRUE" *)assign dm_reg4 = dm_register[4];
+  // (* KEEP = "TRUE" *)assign dm_reg5 = dm_register[5];
 
   // ################ DTM/DM communication ################
   // Explanation:
@@ -140,15 +141,15 @@ module top (
   (* KEEP = "TRUE" *) logic [11:10] dtmcs_dmistat;
   (* KEEP = "TRUE" *) logic [9:4] dtmcs_abits;
   (* KEEP = "TRUE" *) logic [3:0] dtmcs_version;
-  assign dtmcs_zero         = dtmcs.zero;
-  assign dtmcs_errorinfo    = dtmcs.errinfo;
-  assign dtmcs_dtmhardreset = dtmcs.dtmhardreset;
-  assign dtmcs_dmireset     = dtmcs.dmireset;
-  assign dtmcs_zero_        = dtmcs.zero_;
-  assign dtmcs_idle         = dtmcs.idle;
-  assign dtmcs_dmistat      = dtmcs.dmistat;
-  assign dtmcs_abits        = dtmcs.abits;
-  assign dtmcs_version      = dtmcs.version;
+  // assign dtmcs_zero         = dtmcs.zero;
+  // assign dtmcs_errorinfo    = dtmcs.errinfo;
+  // assign dtmcs_dtmhardreset = dtmcs.dtmhardreset;
+  // assign dtmcs_dmireset     = dtmcs.dmireset;
+  // assign dtmcs_zero_        = dtmcs.zero_;
+  // assign dtmcs_idle         = dtmcs.idle;
+  // assign dtmcs_dmistat      = dtmcs.dmistat;
+  // assign dtmcs_abits        = dtmcs.abits;
+  // assign dtmcs_version      = dtmcs.version;
 
 
 
@@ -338,7 +339,7 @@ module top (
         version      : 4'd1  // Version described in spec version 0.13 (and later?)
     };
     dtmcs_data[DTMCS_DATAWIDTH-1:0] <= dtmcs;
-    dmi_data[DMI_DATAWIDTH-1:0] <= '0;
+    dmi_data[DMI_DATAWIDTH-1:0] <= 40'h0000000000;
     dmi_interface_signals.DTM_RSP_READY = 1;  // Ready for reponse as default.
     dmi_interface_signals.DM_REQ_READY = 1;  // Ready for request as default.
     error_out = DMINoError;
@@ -373,7 +374,7 @@ module top (
   // ################ Error handling DMI ################
   always_comb begin
     if (dmi_req.address > DM_REGISTER_SIZE - 1) begin
-      error_in = DMIOpFailed;
+      //error_in = DMIOpFailed;
     end
 
     //    if (DMI_UPDATE && running) begin
@@ -413,8 +414,17 @@ module top (
         // reset with dmireset in DTMCS
         unique case (dmi_resp.op)
           DMINoError: begin
+            // BUG: Strange behaviour. dmi_resp is only used in DMIRead, but
+            // apparently affects the DMINop instruction?
+            // Special case for Nop instruction. Without this, openocd
+            // examination failed Nop instruction.
+            // if (dmi_req.op == DMINop) begin
+            //   dmi_resp.address = 6'b000000;
+            //   dmi_resp.data = 32'h00000000;
+            // end else begin
             dmi_resp.address = dmi_req.address;
             dmi_resp.data = dm_register[dmi_req.address];
+            //end
           end
 
           DMIOpFailed: begin
@@ -450,9 +460,14 @@ module top (
         running = 1;
         write_enabled = 1;
         unique case (dmi_req.op)
+          DMINop: begin
+            write_enabled = 0;
+            dmi_data <= '0;
+          end
+
           DMIRead: begin
-            dmi_data <= {dmi_resp.address, dmi_resp.data, dmi_resp.op};
-            write_enabled = 0;  // If DMIRead operation, we dont want to overwrite the dmi_data buffer
+            dmi_data <= {dmi_resp.address, 32'hABABABAB, dmi_resp.op};
+            write_enabled = 0;  // If DMIRead operation, dont want to overwrite the dmi_data buffer
           end
 
           DMIWrite: begin
@@ -471,6 +486,9 @@ module top (
       end
 
       if (DMI_UPDATE && DMI_SEL) begin
+        // if (dmi_req.op == DMINop) begin
+        //   write_enabled = 0;
+        // end
         running = 0;
       end
     end
