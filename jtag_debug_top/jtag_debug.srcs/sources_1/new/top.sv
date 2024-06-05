@@ -88,6 +88,7 @@ module top (
   logic [31:0] r_count;
   logic locked;
 
+ 
   // DTMCS and DMI datastreams
   localparam DTMCS_DATAWIDTH = 32;
   localparam DMI_DATAWIDTH = 40;
@@ -96,15 +97,21 @@ module top (
 
   (* KEEP = "TRUE" *) reg [DTMCS_DATAWIDTH-1:0] dtmcs_data;
   (* KEEP = "TRUE" *) reg [DMI_DATAWIDTH-1:0] dmi_data;
-  (* KEEP = "TRUE" *) reg [31:0] dm_register[100000];  // DM_REGISTER_SIZE - 1
-  //(* KEEP = "TRUE" *) logic [5:0][31:0] dm_register;  // DM_REGISTER_SIZE - 1
-  // dm_register won't show up in netlist for debugging unless assigned as below??
-  (* KEEP = "TRUE" *) logic [31:0] dm_reg0;
-  (* KEEP = "TRUE" *) logic [31:0] dm_reg1;
-  (* KEEP = "TRUE" *) logic [31:0] dm_reg2;
-  (* KEEP = "TRUE" *) logic [31:0] dm_reg3;
-  (* KEEP = "TRUE" *) logic [31:0] dm_reg4;
-  (* KEEP = "TRUE" *) logic [31:0] dm_reg5;
+  (* KEEP = "TRUE" *) reg [31:0] dm_register[130];
+
+  // Debug signals
+  // (* KEEP = "TRUE" *) logic [31:0] dm_reg0;
+  // (* KEEP = "TRUE" *) logic [31:0] dm_reg1;
+  // (* KEEP = "TRUE" *) logic [31:0] dm_reg2;
+  // (* KEEP = "TRUE" *) logic [31:0] dm_reg3;
+  // (* KEEP = "TRUE" *) logic [31:0] dm_reg4;
+  // (* KEEP = "TRUE" *) logic [31:0] dm_reg5;
+  // (* KEEP = "TRUE" *) logic [31:0] dm_reg15;
+  // (* KEEP = "TRUE" *) logic [31:0] dm_reg16;
+  // (* KEEP = "TRUE" *) logic [31:0] dm_reg17;
+  // (* KEEP = "TRUE" *) logic [31:0] dm_reg18;
+  // (* KEEP = "TRUE" *) logic [31:0] dm_reg19;
+  // (* KEEP = "TRUE" *) logic [31:0] dm_reg20;
 
   // (* KEEP = "TRUE" *)assign dm_reg0 = dm_register[0];
   // (* KEEP = "TRUE" *)assign dm_reg1 = dm_register[1];
@@ -112,6 +119,17 @@ module top (
   // (* KEEP = "TRUE" *)assign dm_reg3 = dm_register[3];
   // (* KEEP = "TRUE" *)assign dm_reg4 = dm_register[4];
   // (* KEEP = "TRUE" *)assign dm_reg5 = dm_register[5];
+  // (* KEEP = "TRUE" *)assign dm_reg15 = dm_register[15];
+  // (* KEEP = "TRUE" *)assign dm_reg16 = dm_register[16];
+  // (* KEEP = "TRUE" *)assign dm_reg17 = dm_register[17];
+  // (* KEEP = "TRUE" *)assign dm_reg18 = dm_register[18];
+  // (* KEEP = "TRUE" *)assign dm_reg19 = dm_register[19];
+  // (* KEEP = "TRUE" *)assign dm_reg20 = dm_register[20];
+
+
+
+
+
 
   // ################ DTM/DM communication ################
   // Explanation:
@@ -131,25 +149,25 @@ module top (
   assign dtmcs_clear = dtmcs.dtmhardreset;
 
   // DEBUG SIGNALS
-  (* KEEP = "TRUE" *) logic [31:21] dtmcs_zero;
-  (* KEEP = "TRUE" *) logic [20:18] dtmcs_zero;
-  (* KEEP = "TRUE" *) logic dtmcs_errorinfo;
-  (* KEEP = "TRUE" *) logic dtmcs_dtmhardreset;
-  (* KEEP = "TRUE" *) logic dtmcs_dmireset;
-  (* KEEP = "TRUE" *) logic dtmcs_zero_;
-  (* KEEP = "TRUE" *) logic [14:12] dtmcs_idle;
-  (* KEEP = "TRUE" *) logic [11:10] dtmcs_dmistat;
-  (* KEEP = "TRUE" *) logic [9:4] dtmcs_abits;
-  (* KEEP = "TRUE" *) logic [3:0] dtmcs_version;
-  // assign dtmcs_zero         = dtmcs.zero;
-  // assign dtmcs_errorinfo    = dtmcs.errinfo;
-  // assign dtmcs_dtmhardreset = dtmcs.dtmhardreset;
-  // assign dtmcs_dmireset     = dtmcs.dmireset;
-  // assign dtmcs_zero_        = dtmcs.zero_;
-  // assign dtmcs_idle         = dtmcs.idle;
-  // assign dtmcs_dmistat      = dtmcs.dmistat;
-  // assign dtmcs_abits        = dtmcs.abits;
-  // assign dtmcs_version      = dtmcs.version;
+  //  (* KEEP = "TRUE" *) logic [31:21] dtmcs_zero;
+  //  (* KEEP = "TRUE" *) logic [20:18] dtmcs_zero;
+  //  (* KEEP = "TRUE" *) logic dtmcs_errorinfo;
+  //  (* KEEP = "TRUE" *) logic dtmcs_dtmhardreset;
+  //  (* KEEP = "TRUE" *) logic dtmcs_dmireset;
+  //  (* KEEP = "TRUE" *) logic dtmcs_zero_;
+  //  (* KEEP = "TRUE" *) logic [14:12] dtmcs_idle;
+  //  (* KEEP = "TRUE" *) logic [11:10] dtmcs_dmistat;
+  //  (* KEEP = "TRUE" *) logic [9:4] dtmcs_abits;
+  //  (* KEEP = "TRUE" *) logic [3:0] dtmcs_version;
+  //  assign dtmcs_zero         = dtmcs.zero;
+  //  assign dtmcs_errorinfo    = dtmcs.errinfo;
+  //  assign dtmcs_dtmhardreset = dtmcs.dtmhardreset;
+  //  assign dtmcs_dmireset     = dtmcs.dmireset;
+  //  assign dtmcs_zero_        = dtmcs.zero_;
+  //  assign dtmcs_idle         = dtmcs.idle;
+  //  assign dtmcs_dmistat      = dtmcs.dmistat;
+  //  assign dtmcs_abits        = dtmcs.abits;
+  //  assign dtmcs_version      = dtmcs.version;
 
 
 
@@ -167,27 +185,25 @@ module top (
   // Had to remove DMI_RESET from dmi_clear. For some reason it forces a reset
   // after DMI_UPDATE which overwrites the dmi_req and dmi_resp registers and
   // no data can be handled. DMI_RESET seems to run every so often.
-  assign dmi_clear = dtmcs.dmireset || sw[1];
+  assign dmi_clear = DMI_RESET || (DMI_UPDATE && DMI_SEL && dtmcs.dmireset) || sw[1];
   (* KEEP = "TRUE" *)logic running;  // Not really used.
   (* KEEP = "TRUE" *)logic write_enabled;  // Enabled by default. If op == read, then don't write
   logic [1:0] error_in, error_out;  // Handles errors during runs
 
   // Debug signals
-  (* KEEP = "TRUE" *) logic [DM_REGISTER_SIZE - 1:0] dmi_req_addr;
-  (* KEEP = "TRUE" *) logic [31:0] dmi_req_data;
-  (* KEEP = "TRUE" *) logic [1:0] dmi_req_op;
-  assign dmi_req_addr = dmi_req.address;
-  assign dmi_req_data = dmi_req.data;
-  assign dmi_req_op   = dmi_req.op;
+  // (* KEEP = "TRUE" *) logic [DM_REGISTER_SIZE - 1:0] dmi_req_addr;
+  // (* KEEP = "TRUE" *) logic [31:0] dmi_req_data;
+  // (* KEEP = "TRUE" *) logic [1:0] dmi_req_op;
+  // assign dmi_req_addr = dmi_req.address;
+  // assign dmi_req_data = dmi_req.data;
+  // assign dmi_req_op   = dmi_req.op;
 
-  (* KEEP = "TRUE" *) logic [DM_REGISTER_SIZE - 1:0] dmi_resp_addr;
-  (* KEEP = "TRUE" *) logic [31:0] dmi_resp_data;
-  (* KEEP = "TRUE" *) logic [1:0] dmi_resp_op;
-  assign dmi_resp_addr = dmi_resp.address;
-  assign dmi_resp_data = dmi_resp.data;
-  assign dmi_resp_op   = dmi_resp.op;
-
-
+  // (* KEEP = "TRUE" *) logic [DM_REGISTER_SIZE - 1:0] dmi_resp_addr;
+  // (* KEEP = "TRUE" *) logic [31:0] dmi_resp_data;
+  // (* KEEP = "TRUE" *) logic [1:0] dmi_resp_op;
+  // assign dmi_resp_addr = dmi_resp.address;
+  // assign dmi_resp_data = dmi_resp.data;
+  // assign dmi_resp_op   = dmi_resp.op;
 
 
 
@@ -197,43 +213,24 @@ module top (
 
 
 
-  clk_wiz_0 clk_gen (
-      // Clock in ports
-      .clk_in1(sysclk),
-      // Clock out ports
-      .clk_out1(clk),
-      // Status and control signals
-      .reset(sw[0]),
-      .locked
-  );
 
-  // clock divider
-  always @(posedge clk) begin
-    r_count <= r_count + 1;
-  end
-
-
-
-
-
-
-
-
+  // ################ DM Specifics ################
+  dmstatus_t dm_status;
 
 
 
   // Setting up scanchain for DTMCS
-  (* KEEP = "TRUE" *)logic DTMCS_CAPTURE;
-  (* KEEP = "TRUE" *)logic DTMCS_DRCK;
-  (* KEEP = "TRUE" *)logic DTMCS_RESET;
-  (* KEEP = "TRUE" *)logic DTMCS_RUNTEST;
-  (* KEEP = "TRUE" *)logic DTMCS_SEL;
-  (* KEEP = "TRUE" *)logic DTMCS_SHIFT;
-  (* KEEP = "TRUE" *)logic DTMCS_TCK;
-  (* KEEP = "TRUE" *)logic DTMCS_TDI;
-  (* KEEP = "TRUE" *)logic DTMCS_TMS;
-  (* KEEP = "TRUE" *)logic DTMCS_UPDATE;
-  (* KEEP = "TRUE" *)logic DTMCS_TDO;
+  (* KEEP = "TRUE" *) logic DTMCS_CAPTURE;
+  (* KEEP = "TRUE" *) logic DTMCS_DRCK;
+  (* KEEP = "TRUE" *) logic DTMCS_RESET;
+  (* KEEP = "TRUE" *) logic DTMCS_RUNTEST;
+  (* KEEP = "TRUE" *) logic DTMCS_SEL;
+  (* KEEP = "TRUE" *) logic DTMCS_SHIFT;
+  (* KEEP = "TRUE" *) logic DTMCS_TCK;
+  (* KEEP = "TRUE" *) logic DTMCS_TDI;
+  (* KEEP = "TRUE" *) logic DTMCS_TMS;
+  (* KEEP = "TRUE" *) logic DTMCS_UPDATE;
+  (* KEEP = "TRUE" *) logic DTMCS_TDO;
 
   BSCANE2 #(
       .JTAG_CHAIN(3)  // Value for USER command. USER3 0x22   
@@ -304,28 +301,6 @@ module top (
 
 
 
-  always_comb begin
-    if (sw[1]) begin
-      for (integer k = 0; k < LedWidth; k++) begin
-        led_r[k] = 0;
-        led_g[k] = 0;
-        led_b[k] = 0;
-      end
-    end else begin
-      led_r[0] <= r_count[22];
-    end
-  end
-
-
-
-
-
-
-
-
-
-
-
   initial begin
     dtmcs = '{
         zero         : '0,
@@ -337,9 +312,51 @@ module top (
         dmistat      : 2'h0,  // 0: No error, 2: Op failed, 3: DMI busy
         abits        : DM_REGISTER_SIZE,  // The size of address in dmi
         version      : 4'd1  // Version described in spec version 0.13 (and later?)
+
     };
     dtmcs_data[DTMCS_DATAWIDTH-1:0] <= dtmcs;
-    dmi_data[DMI_DATAWIDTH-1:0] <= 40'h0000000000;
+
+    dm_status = '{
+        zero: '0,
+        ndmresetpending: 'b0,
+        stickyunavail: 'b0,
+        impebreak: 'b0,
+        zero_: '0,
+        allhavereset: 'b0,
+        anyhavereset: 'b0,
+        allresumeack: 'b0,
+        anyresumeack: 'b0,
+        allnonexistent: 'b0,
+        anynonexistent: 'b0,
+        allunavail: 'b0,
+        anyunavail: 'b0,
+        allrunning: 'b0,
+        anyrunning: 'b0,
+        allhalted: 'b0,
+        anyhalted: 'b0,
+        authenticated: 'b1,
+        authbusy: 'b0,
+        hasresethaltreq: 'b0,
+        confstrptrvalid: 'b0,
+        version: 'd15  // Debug module conforms to version 1.0
+    };
+
+    // logic haltreq,
+    // logic resumereq,
+    // logic hartreset,
+    // logic ackhavereset,
+    // logic ackunavail,
+    // logic hasel: 'b0,
+    // logic [25:16] hartsello: 10'h0,
+    // logic [15:6] hartselhi: 10'h0,
+    // logic setkeepalive,
+    // logic clrkeepalive,
+    // logic setresethaltreq,
+    // logic clrresethaltreq,
+    // logic ndmreset,
+    // logic dmactive,  // lsb
+    dm_register['h11] <= dm_status;
+    dmi_data[DMI_DATAWIDTH-1:0] <= '0;
     dmi_interface_signals.DTM_RSP_READY = 1;  // Ready for reponse as default.
     dmi_interface_signals.DM_REQ_READY = 1;  // Ready for request as default.
     error_out = DMINoError;
@@ -414,17 +431,8 @@ module top (
         // reset with dmireset in DTMCS
         unique case (dmi_resp.op)
           DMINoError: begin
-            // BUG: Strange behaviour. dmi_resp is only used in DMIRead, but
-            // apparently affects the DMINop instruction?
-            // Special case for Nop instruction. Without this, openocd
-            // examination failed Nop instruction.
-            // if (dmi_req.op == DMINop) begin
-            //   dmi_resp.address = 6'b000000;
-            //   dmi_resp.data = 32'h00000000;
-            // end else begin
             dmi_resp.address = dmi_req.address;
             dmi_resp.data = dm_register[dmi_req.address];
-            //end
           end
 
           DMIOpFailed: begin
@@ -443,11 +451,21 @@ module top (
             dmi_resp.data = 32'hCCCCCCCC;
           end
         endcase
+
+        // Forcing hasel, hasello, haselhi to 0
+        // This makes OPENOCD only use 1 hart instead of 1024.
+        // If there is a way for Systemverilog to make a field
+        // read-only, this can be removed. Don't know how to do
+        // this as of now.
+        if (dmi_req.op == DMIWrite) begin
+          if (dmi_req.address == 6'h10) begin
+            dmi_req.data[28:8] <= '0;
+          end
+        end
       end
     end
 
   end
-
 
   // ################ DMI: Data handling ################
   always @(posedge DMI_TCK) begin
@@ -458,20 +476,24 @@ module top (
       // operation.
       if (DMI_CAPTURE && DMI_SEL) begin
         running = 1;
-        write_enabled = 1;
         unique case (dmi_req.op)
-          DMINop: begin
-            write_enabled = 0;
-            dmi_data <= '0;
-          end
-
           DMIRead: begin
-            dmi_data <= {dmi_resp.address, 32'hABABABAB, dmi_resp.op};
-            write_enabled = 0;  // If DMIRead operation, dont want to overwrite the dmi_data buffer
+            dmi_data <= {dmi_resp.address, dmi_resp.data, dmi_resp.op};
           end
 
           DMIWrite: begin
             dm_register[dmi_req.address] = dmi_req.data;
+
+            // haltreq bit
+            if (dmi_req.data[33] == 1) begin
+              dm_register['h11][9] <= 1;  // allhalted
+            end
+
+            // resumereq bit
+            if (dmi_req.data[32] == 1) begin
+              dm_register['h11][9]  <= 0;  // allhalted
+              dm_register['h11][17] <= 1;  // allresumeack
+            end
           end
 
           // If any other operation then do nothing.
@@ -481,14 +503,17 @@ module top (
       end
 
       // Shifts in the instruction recieved
-      if (DMI_SHIFT && DMI_SEL && write_enabled) begin
-        dmi_data <= {DMI_TDI, dmi_data[DMI_DATAWIDTH-1:1]};
+      if (DMI_SHIFT && DMI_SEL) begin
+        if (dmi_req.op == DMIWrite) begin
+          dmi_data <= '0;
+        end else begin
+          dmi_data <= {DMI_TDI, dmi_data[DMI_DATAWIDTH-1:1]};
+        end
+
       end
 
+
       if (DMI_UPDATE && DMI_SEL) begin
-        // if (dmi_req.op == DMINop) begin
-        //   write_enabled = 0;
-        // end
         running = 0;
       end
     end
@@ -497,17 +522,13 @@ module top (
 
 
 
-
-
-
-
   // ########################### DTMCS ###########################
-  // DTMCS OVERVIEW EXPLANATION:
-  // DTMCS tells the Debugger about the state of transactions. It is
-  // mostly a read register. However, you are able to write to two bits
-  // dmireset and dtmhardreset. Dtmhardreset has not been implemented.
-  // Dmireset resets the dmi_data channel as it should not kill any 
-  // outstanding DMI transactions.
+  //  DTMCS OVERVIEW EXPLANATION:
+  //  DTMCS tells the Debugger about the state of transactions. It is
+  //  mostly a read register. However, you are able to write to two bits
+  //  dmireset and dtmhardreset. Dtmhardreset has not been implemented.
+  //  Dmireset resets the dmi_data channel as it should not kill any 
+  //  outstanding DMI transactions.
 
 
 
@@ -533,9 +554,6 @@ module top (
     if (DTMCS_SHIFT && DTMCS_SEL) begin
       dtmcs_data <= {DTMCS_TDI, dtmcs_data[DTMCS_DATAWIDTH-1:1]};
     end
-
-  end
-
 
 
 
