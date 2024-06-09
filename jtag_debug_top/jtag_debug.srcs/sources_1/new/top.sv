@@ -99,7 +99,7 @@ module top (
 
   (* KEEP = "TRUE" *) reg [DTMCS_DATAWIDTH-1:0] dtmcs_data;
   (* KEEP = "TRUE" *) reg [DMI_DATAWIDTH-1:0] dmi_data;
-  (* KEEP = "TRUE" *) reg [31:0] dm_register[130];
+  (* KEEP = "TRUE" *) reg [31:0] dm_register[10000];
 
   // Debug signals
   // (* KEEP = "TRUE" *) logic [31:0] dm_reg0;
@@ -547,5 +547,3 @@ module top (
 
 
 endmodule
-
-
