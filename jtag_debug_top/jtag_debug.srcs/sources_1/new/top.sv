@@ -66,27 +66,29 @@
 
 
 
-import arty_pkg::*;
+//import arty_pkg::*;
 
 module top (
     input sysclk,
 
-    output LedT led,
-    output LedT led_r,
-    output LedT led_g,
-    output LedT led_b,
-    input  SwT  sw,
+    //output logic rx,  // seen from host side
+    input  logic tx
 
-    output logic rx,  // seen from host side
-    input  logic tx,
-
-    input BtnT btn
 );
   import debug_pkg::*;
 
   logic clk;
   logic [31:0] r_count;
   logic locked;
+
+  clk_wiz_0 clk_gen (
+      // Clock in ports
+      .clk_in1(sysclk),
+      // Clock out ports
+      .clk_out1(clk),
+      // Status and control signals
+      .locked
+  );
 
  
   // DTMCS and DMI datastreams
@@ -182,12 +184,9 @@ module top (
 
   (* KEEP = "TRUE" *) logic dmi_clear;
   assign DMI_TDO   = dmi_data[0];
-  // Had to remove DMI_RESET from dmi_clear. For some reason it forces a reset
-  // after DMI_UPDATE which overwrites the dmi_req and dmi_resp registers and
-  // no data can be handled. DMI_RESET seems to run every so often.
-  assign dmi_clear = DMI_RESET || (DMI_UPDATE && DMI_SEL && dtmcs.dmireset) || sw[1];
+  assign dmi_clear = DMI_RESET || (DMI_UPDATE && DMI_SEL && dtmcs.dmireset);
   (* KEEP = "TRUE" *)logic running;  // Not really used.
-  (* KEEP = "TRUE" *)logic write_enabled;  // Enabled by default. If op == read, then don't write
+  //(* KEEP = "TRUE" *)logic write_enabled;  // Enabled by default. If op == read, then don't write
   logic [1:0] error_in, error_out;  // Handles errors during runs
 
   // Debug signals
@@ -338,23 +337,9 @@ module top (
         authbusy: 'b0,
         hasresethaltreq: 'b0,
         confstrptrvalid: 'b0,
-        version: 'd15  // Debug module conforms to version 1.0
+        version: 'd3  // Debug module conforms to version 1.0
     };
 
-    // logic haltreq,
-    // logic resumereq,
-    // logic hartreset,
-    // logic ackhavereset,
-    // logic ackunavail,
-    // logic hasel: 'b0,
-    // logic [25:16] hartsello: 10'h0,
-    // logic [15:6] hartselhi: 10'h0,
-    // logic setkeepalive,
-    // logic clrkeepalive,
-    // logic setresethaltreq,
-    // logic clrresethaltreq,
-    // logic ndmreset,
-    // logic dmactive,  // lsb
     dm_register['h11] <= dm_status;
     dmi_data[DMI_DATAWIDTH-1:0] <= '0;
     dmi_interface_signals.DTM_RSP_READY = 1;  // Ready for reponse as default.
@@ -362,7 +347,7 @@ module top (
     error_out = DMINoError;
     error_in = DMINoError;
     running = 0;
-    write_enabled = 1;
+    //write_enabled = 1;
   end
 
 
@@ -387,6 +372,7 @@ module top (
 
   // TODO: Implement additional cycles in Run-Test/Idle if DMI was busy. Might not be necessary
   // if the requests are handled fast enough.
+  // TODO: Fully correct implementation of DMIbusy error.
 
   // ################ Error handling DMI ################
   always_comb begin
@@ -454,6 +440,7 @@ module top (
 
         // Forcing hasel, hasello, haselhi to 0
         // This makes OPENOCD only use 1 hart instead of 1024.
+        // This option can be set in OPENOCD somehow, don't know how
         // If there is a way for Systemverilog to make a field
         // read-only, this can be removed. Don't know how to do
         // this as of now.
@@ -554,7 +541,7 @@ module top (
     if (DTMCS_SHIFT && DTMCS_SEL) begin
       dtmcs_data <= {DTMCS_TDI, dtmcs_data[DTMCS_DATAWIDTH-1:1]};
     end
-
+  end
 
 
 

@@ -122,6 +122,7 @@ package debug_pkg;
     logic anyunavail;
     logic allrunning;
     logic anyrunning;
+    logic allhalted;
     logic anyhalted;
     logic authenticated;
     logic authbusy;
