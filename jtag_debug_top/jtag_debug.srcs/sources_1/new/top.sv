@@ -72,7 +72,7 @@ module top (
     input sysclk,
 
     //output logic rx,  // seen from host side
-    input  logic tx
+    input logic tx
 
 );
   import debug_pkg::*;
@@ -83,14 +83,14 @@ module top (
 
   clk_wiz_0 clk_gen (
       // Clock in ports
-      .clk_in1(sysclk),
+      .clk_in1 (sysclk),
       // Clock out ports
       .clk_out1(clk),
       // Status and control signals
       .locked
   );
 
- 
+
   // DTMCS and DMI datastreams
   localparam DTMCS_DATAWIDTH = 32;
   localparam DMI_DATAWIDTH = 40;
@@ -99,7 +99,7 @@ module top (
 
   (* KEEP = "TRUE" *) reg [DTMCS_DATAWIDTH-1:0] dtmcs_data;
   (* KEEP = "TRUE" *) reg [DMI_DATAWIDTH-1:0] dmi_data;
-  (* KEEP = "TRUE" *) reg [31:0] dm_register[10000];
+  (* KEEP = "TRUE" *) reg [31:0] dm_register[130];
 
   // Debug signals
   // (* KEEP = "TRUE" *) logic [31:0] dm_reg0;
@@ -185,7 +185,7 @@ module top (
   (* KEEP = "TRUE" *) logic dmi_clear;
   assign DMI_TDO   = dmi_data[0];
   assign dmi_clear = DMI_RESET || (DMI_UPDATE && DMI_SEL && dtmcs.dmireset);
-  (* KEEP = "TRUE" *)logic running;  // Not really used.
+  (* KEEP = "TRUE" *) logic running;  // Not really used.
   //(* KEEP = "TRUE" *)logic write_enabled;  // Enabled by default. If op == read, then don't write
   logic [1:0] error_in, error_out;  // Handles errors during runs
 
@@ -208,13 +208,19 @@ module top (
 
 
 
-
-
-
-
-
   // ################ DM Specifics ################
   dmstatus_t dm_status;
+  abstractcs_t abstract_cs;
+  cmderr_e cmderr;
+  logic [31:0] command_check;
+
+
+
+
+
+
+
+
 
 
 
@@ -339,8 +345,21 @@ module top (
         confstrptrvalid: 'b0,
         version: 'd3  // Debug module conforms to version 1.0
     };
-
     dm_register['h11] <= dm_status;
+
+    abstract_cs = '{
+        zero: '0,
+        progbufsize: 'b0,  // No Program Buffer implemented
+        zero_: '0,
+        busy: 'b0,  // No abstract command executing
+        relaxedpriv: 'b0,  // Full permission checks
+        cmderr: 'b0,  // No error
+        zero__: '0,
+        datacount: 'd1  // One data register implemented
+    };
+    dm_register['h16] <= abstract_cs;
+
+
     dmi_data[DMI_DATAWIDTH-1:0] <= '0;
     dmi_interface_signals.DTM_RSP_READY = 1;  // Ready for reponse as default.
     dmi_interface_signals.DM_REQ_READY = 1;  // Ready for request as default.
