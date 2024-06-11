@@ -83,7 +83,7 @@ package debug_pkg;
     logic DM_RSP_VALID;   // DM: Valid respond pending
   } dmi_interface_signals_t;
 
-  typedef enum logic [2:0] {
+  typedef enum logic [1:0] {
     Idle = 2'h0,
     Read = 2'h1,
     Write = 2'h2,
@@ -149,7 +149,50 @@ package debug_pkg;
     logic ndmreset;
     logic dmactive;  // lsb
   } dmcontrol_t;
-    
+
+  // 3.7.1. Abstract Command Listing
+  typedef struct packed {
+    logic [31:24] cmdtype;  // msb
+    logic zero;
+    logic [22:20] aarsize;
+    logic aarpostincrement;
+    logic postexec;
+    logic transfer;
+    logic write;
+    logic [15:0] regno;  // lsb
+  } access_register_command_t;
+
+  // Table 3. Meaning of cmdtype
+  typedef enum logic [7:0] {
+    AccessRegister = 8'h0,
+    QuickAccess = 8'h1,
+    AccessMemory = 8'h2
+  } cmdtype_e;
+
+  // 3.14.6. Abstract Control and Status (abstractcs, at 0x16)
+  typedef struct packed {
+    logic [31:29] zero;
+    logic [28:24] progbufsize;
+    logic [23:13] zero_;
+    logic busy;
+    logic relaxedpriv;
+    logic [10:8] cmderr;
+    logic [7:4] zero__;
+    logic [3:0] datacount;
+  } abstractcs_t;
+
+  // 3.14.6. Abstract Control and Status (abstractcs, at 0x16)
+  typedef enum logic [2:0] {
+    CmdNoError = 3'h0,
+    CmdBusy = 3'h1,
+    CmdNotSupported = 3'h2,
+    CmdException = 3'h3,
+    CmdHaltOrResume = 3'h4,
+    CmdBus = 3'h5,
+    CmdReserved = 3'h6,
+    CmdOther = 3'h7
+  } cmderr_e;
+
   // 3.14. Debug Module Registers
   typedef struct {
     dmcontrol_t dmcontrol;
